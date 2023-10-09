@@ -1,6 +1,9 @@
 import asyncio
 import websockets
 import json
+import logging
+
+logging.basicConfig(level=logging.INFO)
 
 # Maintain a list of connected clients
 connected_clients = set()
@@ -14,69 +17,69 @@ async def handle_connection(websocket, path):
 
     # Send all connected players to the new client
     for user in connected_players:
-        print(user)
+        logging.info(f"Sending connected player {user} to new client")
         await websocket.send(json.dumps({
             "action": "join",
             "user": user
         }))
 
-    # try:
-    async for message in websocket:
-        message = json.loads(message)
-        
-        if "content" in message:
-            content = message['content']
+    try:
+        async for message in websocket:
+            message = json.loads(message)
+            
+            if "content" in message:
+                content = message['content']
 
-        # print(message)
+            logging.info(f"Received message: {message}")
 
-        if message['action'] == "join":
-            connected_players[message['user']] = {
-                "name": message['user'],
-                "socket": websocket,
-                "position": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
-                },
-                "velocity": {
-                    "x": 0,
-                    "y": 0,
-                    "z": 0
+            if message['action'] == "join":
+                connected_players[message['user']] = {
+                    "name": message['user'],
+                    "socket": websocket,
+                    "position": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    },
+                    "velocity": {
+                        "x": 0,
+                        "y": 0,
+                        "z": 0
+                    }
                 }
-            }
 
-            for client in connected_clients:
-                await client.send({
-                    "action": "join",
-                    "user": message['user']
-                })
-        elif message['action'] == "update":
-            connected_players[message['user']] = {
-                "name": message['user'],
-                "socket": websocket,
-                "position": content['position'],
-                "velocity": content['velocity']
-            }
-
-            for client in connected_clients:
-                if client != websocket:
+                for client in connected_clients:
                     await client.send(json.dumps({
-                        "action": "update",
-                        "user": message['user'],
-                        "position": content['position'],
-                        "velocity": content['velocity']
+                        "action": "join",
+                        "user": message['user']
                     }))
-            # Broadcast the received message to all clients
-            # for client in connected_clients:
-            #     await client.send(message)
-    # except:
-    #     # Handle disconnect or errors
-    #     print("An error occurred")
-    # finally:
-    #     # Remove the disconnected client from the list
-    #     connected_clients.remove(websocket)
+            elif message['action'] == "update":
+                connected_players[message['user']] = {
+                    "name": message['user'],
+                    "socket": websocket,
+                    "position": content['position'],
+                    "velocity": content['velocity']
+                }
+
+                for client in connected_clients:
+                    if client != websocket:
+                        await client.send(json.dumps({
+                            "action": "update",
+                            "user": message['user'],
+                            "position": content['position'],
+                            "velocity": content['velocity']
+                        }))
+            else:
+                logging.warning(f"Unknown message action: {message['action']}")
+    except websockets.exceptions.ConnectionClosed:
+        logging.info("Connection closed")
+    except Exception as e:
+        logging.error(f"An error occurred: {e}")
+    finally:
+        # Remove the disconnected client from the list
+        connected_clients.remove(websocket)
 
 if __name__ == "__main__":
-    start_server = websockets.serve(handle_connection, "10.223.16.17", 8765)
+    start_server = websockets.serve(handle_connection, "localhost", 8765)
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
