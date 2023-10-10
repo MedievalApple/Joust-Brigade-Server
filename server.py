@@ -30,7 +30,7 @@ async def handle_connection(websocket, path):
             if "content" in message:
                 content = message['content']
 
-            logging.info(f"Received message: {message}")
+            # logging.info(f"Received message: {message}")
 
             if message['action'] == "join":
                 connected_players[message['user']] = {
@@ -69,17 +69,44 @@ async def handle_connection(websocket, path):
                             "position": content['position'],
                             "velocity": content['velocity']
                         }))
+
             else:
                 logging.warning(f"Unknown message action: {message['action']}")
     except websockets.exceptions.ConnectionClosed:
+
+
         logging.info("Connection closed")
     except Exception as e:
         logging.error(f"An error occurred: {e}")
     finally:
-        # Remove the disconnected client from the list
         connected_clients.remove(websocket)
 
+        for player_name, player_data in connected_players.items():         
+            if player_data["socket"] == websocket:
+                disconnectName = player_name
+        print(disconnectName)
+
+        
+
+        if disconnectName:
+            for client in connected_clients:
+                await client.send(json.dumps({
+                    "action": "remove",
+                    "user": disconnectName
+                }))
+
+        index = 0
+
+        for player_name, player_data in connected_players.items():
+            index += 1
+            if player_data["socket"] == websocket:
+                break
+        
+        connected_players.remove(index)
+
+
+
 if __name__ == "__main__":
-    start_server = websockets.serve(handle_connection, "localhost", 8765)
+    start_server = websockets.serve(handle_connection, "10.223.16.17", 8765)
     asyncio.get_event_loop().run_until_complete(start_server)
     asyncio.get_event_loop().run_forever()
