@@ -1,52 +1,20 @@
-import { AniSprite, ImgSprite, Sprite } from "./sprite";
 import { Vector } from "./vector";
 import {
-    ctx,
-    canvas,
+    GAME_HEIGHT,
     GAME_OBJECTS,
-    player,
+    GAME_WIDTH,
     PLAYER_HEIGHT,
     PLAYER_WIDTH,
-    PLAYER_USERNAME,
 } from "./joust";
 import { Collider, Platform } from "./map_object";
-import { DEBUG } from "./debug";
 import { OffsetHitbox, ICollisionObject, isColliding } from "./collision";
 import { constrain } from "./utils";
 import { Direction } from "./enums";
 import { v4 as uuidv4 } from "uuid";
+import { connectedClients, io } from ".";
 
 export class Player {
     private _dead: boolean = false;
-    currentAnimation: Sprite | null;
-    animations: { [key: string]: Sprite } = {
-        running: new AniSprite(
-            "/assets/sprite_sheet/ostrich/walk_ostrich/walk",
-            4,
-            {
-                animationSpeed: 10,
-                scale: new Vector(2, 2),
-                loop: true,
-            }
-        ),
-        stop: new ImgSprite(
-            "/assets/sprite_sheet/ostrich/walk_ostrich/stop.png",
-            new Vector(2, 2)
-        ),
-        flap: new AniSprite(
-            "/assets/sprite_sheet/ostrich/flap_ostrich/flap",
-            2,
-            {
-                animationSpeed: 0,
-                scale: new Vector(2, 2),
-                loop: true,
-            }
-        ),
-        idle: new ImgSprite(
-            "/assets/sprite_sheet/ostrich/idle_ostrich/idle_standing.png",
-            new Vector(2, 2)
-        ),
-    };
     name: string;
     velocity: Vector = new Vector(0, 0);
     size: Vector;
@@ -54,7 +22,6 @@ export class Player {
     friction: number = 0.4;
     xAccel: number = 0;
     maxSpeed: Vector = new Vector(3, 5);
-    color: string;
     direction: Direction = Direction.Right;
     isJumping: boolean = false;
     position: Vector;
@@ -63,7 +30,6 @@ export class Player {
     lance: Collider;
     head: Collider;
     collisionObjects: Array<ICollisionObject> = [];
-    debugColor: string = "red";
     jumpDebounce: boolean;
     id: string = uuidv4();
 
@@ -72,12 +38,10 @@ export class Player {
         y: number,
         width: number,
         height: number,
-        color: string,
         name: string
     ) {
         this.position = new Vector(x, y);
         this.size = new Vector(width, height);
-        this.color = color;
         this.name = name;
 
         this.collider = new Collider();
@@ -94,15 +58,9 @@ export class Player {
             new Vector(4, 0),
             new Vector(18, 6)
         );
-        this.updateCollider(this.position);
-        // GAME_OBJECTS.unshift(this);
-        GAME_OBJECTS.set(this.id, this);
-    }
 
-    toggleDirection(): Direction {
-        return this.direction === Direction.Left
-            ? Direction.Right
-            : Direction.Left;
+        this.updateCollider(this.position);
+        GAME_OBJECTS.set(this.id, this);
     }
 
     updateCollider(vector: Vector) {
@@ -120,97 +78,12 @@ export class Player {
         if (this.head) this.head.position = vector;
     }
 
-    show() {
-        ctx.fillStyle = this.color;
-
-        // Draw name above player, centered
-        if (this.name) {
-            ctx.font = "10px Arial";
-            ctx.fillText(
-                this.name,
-                this.position.x +
-                    this.size.x / 2 -
-                    ctx.measureText(this.name).width / 2,
-                this.position.y - 20
-            );
-        }
-
-        this.updateCurrentAnimation();
-        if (!this.currentAnimation) {
-            this.currentAnimation = this.animations.flap;
-            // return console.error("No current animation");
-        }
-
-        if (this.currentAnimation instanceof AniSprite) {
-            this.collider.hitbox.size.x =
-                this.currentAnimation.images[0].width * 2;
-            this.collider.hitbox.size.y =
-                this.currentAnimation.images[0].height * 2;
-        } else {
-            this.collider.hitbox.size.x = this.currentAnimation.image.width * 2;
-            this.collider.hitbox.size.y =
-                this.currentAnimation.image.height * 2;
-        }
-
-        if (this.oldSize.y !== this.collider.hitbox.size.y) {
-            this.position = this.position.add(
-                this.oldSize.sub(this.collider.hitbox.size)
-            );
-        }
-
-        this.oldSize = this.collider.hitbox.size.clone();
-        if (
-            this.currentAnimation instanceof AniSprite &&
-            this.currentAnimation == this.animations.running
-        ) {
-            this.currentAnimation.animationSpeed =
-                6 - Math.abs(this.velocity.x);
-        }
-        if (
-            (this.velocity.x < 0 && !this.isJumping) ||
-            this.direction == Direction.Left
-        ) {
-            ctx.save();
-            ctx.scale(-1, 1);
-            this.currentAnimation.show(
-                -this.position.x - this.size.x,
-                this.position.y
-            );
-            ctx.restore();
-        } else {
-            this.currentAnimation.show(this.position.x, this.position.y);
-        }
-
-        this.drawDebugVisuals();
-    }
-
-    updateCurrentAnimation() {
-        if (this.isJumping) {
-            this.currentAnimation = this.animations.flap;
-        } else if (this.velocity.x === 0) {
-            this.currentAnimation = this.animations.idle;
-        } else if (Math.sign(this.velocity.x) !== Math.sign(this.xAccel)) {
-            this.currentAnimation = this.animations.stop;
-        } else {
-            this.currentAnimation = this.animations.running;
-            if (this.velocity.x > 0) {
-                this.direction = Direction.Right;
-            } else {
-                this.direction = Direction.Left;
-            }
-        }
-
-        if (!this.currentAnimation) {
-            this.currentAnimation = this.animations.idle;
-        }
-    }
-
     // Torroidal collision detection
     handleCollisions() {
-        if (this.position.x - 1 > canvas.width) {
+        if (this.position.x - 1 > GAME_WIDTH) {
             this.position.x = 1;
         } else if (this.position.x < 1) {
-            this.position.x = canvas.width - 1;
+            this.position.x = GAME_WIDTH - 1;
         }
     }
 
@@ -234,57 +107,8 @@ export class Player {
         this.position.x += this.velocity.x;
 
         this.handleCollisions();
-        if (this.position.y < -10 || this.position.y + 10 > canvas.height) {
-            this.position = new Vector(Math.random() * canvas.width, 50);
-        }
-    }
-
-    handleLeft() {
-        if (this.isJumping) {
-            this.direction = Direction.Left;
-        }
-
-        if (Math.abs(this.velocity.x) == 0) {
-            this.velocity.x = -1;
-            this.xAccel = -0.05;
-        } else {
-            this.xAccel = -0.07;
-        }
-    }
-
-    handleRight() {
-        if (this.isJumping) {
-            this.direction = Direction.Right;
-        }
-
-        if (Math.abs(this.velocity.x) == 0) {
-            this.velocity.x = 1;
-            this.xAccel = 0.05;
-        } else {
-            this.xAccel = 0.07;
-        }
-    }
-
-    jumpKeyDown() {
-        if (!this.jumpDebounce) {
-            this.isJumping = true;
-            this.velocity.y = constrain(this.velocity.y - 2, -2, 2);
-
-            if (this.currentAnimation instanceof AniSprite)
-                this.currentAnimation.next();
-            this.jumpDebounce = true;
-        }
-    }
-
-    jumpKeyUp() {
-        this.jumpDebounce = false;
-    }
-
-    drawDebugVisuals() {
-        if (DEBUG) {
-            this.collider.show(this.debugColor);
-            this.lance.show();
-            this.head.show();
+        if (this.position.y < -10 || this.position.y + 10 > GAME_HEIGHT) {
+            this.position = new Vector(Math.random() * GAME_WIDTH, 50);
         }
     }
 
@@ -311,12 +135,11 @@ export class Player {
 export class EnemyHandler {
     private static singleton: EnemyHandler;
     private _enemies: Enemy[] = [];
-    
+
     spawningWave: boolean = false;
 
     private constructor(startingEnemies: number = 0) {
         this.spawningWave = true;
-        this.createEnemy(startingEnemies)
     }
 
     public static getInstance(number?: number): EnemyHandler {
@@ -326,54 +149,47 @@ export class EnemyHandler {
         return EnemyHandler.singleton;
     }
 
-    createEnemy(number: number = 1) {
-        let alreadySpawned = number;
-        for (let i = 0; i < number; i++) {
-            // var spawnablesSpots = filter((object) => {
-            //     return object instanceof Platform && object.spawner;
-            // });
+    createEnemy() {
+        let spawnablesSpots: Platform[] = [];
 
-            let spawnablesSpots: Platform[] = [];
-
-            for (let [_, value] of GAME_OBJECTS) {
-                if (value instanceof Platform && value.spawner) {
-                    spawnablesSpots.push(value);
-                }
+        for (let [_, value] of GAME_OBJECTS) {
+            if (value instanceof Platform && value.spawner) {
+                spawnablesSpots.push(value);
             }
-
-            for (let i = spawnablesSpots.length - 1; i >= 0; i--) {
-                for (var enemy of this.enemies) {
-                    enemy.collider.show("red");
-                    spawnablesSpots[i].spawner.show("blue");
-                    if (
-                        isColliding(enemy.collider, spawnablesSpots[i].spawner)
-                    ) {
-                        spawnablesSpots.splice(i, 1);
-                        break;
-                    }
-                }
-            }
-
-            let spot =
-                spawnablesSpots[
-                    Math.floor(Math.random() * spawnablesSpots.length)
-                ];
-            if (spawnablesSpots.length == 0) break;
-            alreadySpawned--;
-            this.enemies.push(
-                new Enemy(
-                    spot.spawner.collisionX + PLAYER_WIDTH,
-                    spot.spawner.collisionY + PLAYER_HEIGHT,
-                    PLAYER_WIDTH,
-                    PLAYER_HEIGHT,
-                    "green"
-                )
-            );
         }
-        if (alreadySpawned > 0) {
-            setTimeout(() => this.createEnemy(alreadySpawned), 1000);
-        } else {
-            this.spawningWave = false;
+
+        for (let i = spawnablesSpots.length - 1; i >= 0; i--) {
+            for (var enemy of this.enemies) {
+                if (
+                    isColliding(enemy.collider, spawnablesSpots[i].spawner)
+                ) {
+                    spawnablesSpots.splice(i, 1);
+                    break;
+                }
+            }
+        }
+
+        let spot = spawnablesSpots[
+            Math.floor(Math.random() * spawnablesSpots.length)
+        ];
+
+        if (spawnablesSpots.length == 0) return;
+
+        const newEnemy = new Enemy(
+            spot.spawner.collisionX + PLAYER_WIDTH,
+            spot.spawner.collisionY + PLAYER_HEIGHT,
+            PLAYER_WIDTH,
+            PLAYER_HEIGHT,
+            "green"
+        )
+        
+        this.enemies.push(newEnemy);
+        io.in("players").emit("playerJoined", newEnemy.id, newEnemy.name);
+    }
+
+    createEnemies(enemyCount: number = 1) {
+        for (let i = 0; i < enemyCount; i++) {
+            this.createEnemy();
         }
     }
 
@@ -399,34 +215,9 @@ export class Enemy extends Player {
         width: number,
         height: number,
         color: string,
-        name?: string
     ) {
-        super(x, y, width, height, color, name);
+        super(x, y, width, height, color);
         this.name = `Enemy ${++counter}`;
-        this.animations = {
-            running: new AniSprite(
-                "/assets/sprite_sheet/bounder/walk_bounder/walk",
-                4,
-                {
-                    animationSpeed: 5,
-                    scale: new Vector(2, 2),
-                    loop: true,
-                }
-            ),
-            flap: new AniSprite(
-                "/assets/sprite_sheet/bounder/flap_bounder/flap",
-                2,
-                {
-                    animationSpeed: 5,
-                    scale: new Vector(2, 2),
-                    loop: true,
-                }
-            ),
-            idle: new ImgSprite(
-                "/assets/Sprite Sheet/Bounder/Idle (Bounder)/Idle_Standing",
-                new Vector(2, 2)
-            ),
-        };
 
         switch (Math.floor(Math.random() * 2)) {
             case 0:
@@ -452,8 +243,23 @@ export class Enemy extends Player {
     }
 
     dumbAI() {
+        for (let existingUser of connectedClients) {
+            existingUser.socket.emit('playerMoved', this.id, this.position.x, this.position.y);
+        }
+        let closestPlayer = null
+        let smallestDistance = GAME_WIDTH * GAME_HEIGHT;
+        for (var [_, object] of GAME_OBJECTS) {
+            if (object.constructor == Player) {
+                // @ts-ignore
+                let distance = (this.position.clone().sub(object.position)).mag();
+                if (distance < smallestDistance) {
+                    smallestDistance = distance;
+                    closestPlayer = object;
+                }
+            }
+        }
         if (Math.random() < 0.1) {
-            if (this.position.y > player.position.y) {
+            if (closestPlayer && this.position.y > closestPlayer.position.y) {
                 this.isJumping = true;
                 this.velocity.y = constrain(this.velocity.y - 2, -2, 2);
             } else {

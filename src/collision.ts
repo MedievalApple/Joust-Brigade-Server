@@ -1,4 +1,4 @@
-import { ctx, enemyHandler } from "./joust";
+import {enemyHandler } from "./joust";
 import { Enemy, Player } from "./player";
 import { Vector } from "./vector";
 
@@ -56,13 +56,6 @@ export class Collider {
     get collisionSize() {
         return this.hitbox.size;
     }
-
-    show(color: string = "white") {
-        ctx.strokeStyle = color;
-        ctx.lineWidth = 1;
-        ctx.strokeRect(this.collisionX, this.collisionY, this.collisionSize.x, this.collisionSize.y);
-        ctx.strokeRect(this.collisionX, this.collisionY, this.collisionSize.x, this.collisionSize.y);
-    }
 }
 export function isColliding(collider1: Collider, collider2: Collider) {
     const overlapX = Math.min(
@@ -91,7 +84,6 @@ export function handleCollision(
     // Alternatively, you can take a 2 phase approach to collision, a broad phase and a narrow phase
     // quickly determine if two objects are not likely to collide (small size and far away), and then
     // skip collision checking for those altogether
-
     // Calculate the overlap on each axis
     const overlapX = Math.min(
         collider1.collisionX + collider1.collisionSize.x - collider2.collisionX,

@@ -49,12 +49,12 @@ export class Vector {
         );
     }
 
-    length(): number {
+    mag(): number {
         return Math.sqrt(this.dot(this));
     }
 
     unit(): Vector {
-        return this.divide(this.length());
+        return this.divide(this.mag());
     }
 
     min(): number {
@@ -68,12 +68,12 @@ export class Vector {
     toAngles(): {theta: number, phi: number} {
         return {
             theta: Math.atan2(this.z, this.x),
-            phi: Math.asin(this.y / this.length())
+            phi: Math.asin(this.y / this.mag())
         };
     }
 
     angleTo(a): number {
-        return Math.acos(this.dot(a) / (this.length() * a.length()));
+        return Math.acos(this.dot(a) / (this.mag() * a.length()));
     }
 
     toArray(n): number[] {

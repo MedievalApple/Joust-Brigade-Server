@@ -1,5 +1,4 @@
 import { Vector } from "./vector";
-import { AniSprite, ColorSprite, ImgSprite, Sprite } from "./sprite";
 import { Player } from "./player";
 import { DEBUG } from "./debug";
 import { Collider, ICollisionObject, OffsetHitbox } from "./collision";
@@ -24,16 +23,14 @@ export class MapObject {
     position: Vector;
     velocity: Vector;
     size: Vector;
-    sprite: Sprite;
     collider: Collider;
     static: boolean = true;
     id: string = uuidv4();
 
-    constructor(x: number, y: number, w: number, h: number, collider: Collider, sprite?: Sprite) {
+    constructor(x: number, y: number, w: number, h: number, collider: Collider) {
         this.position = new Vector(x, y);
         this.velocity = new Vector(0, 0);
         this.size = new Vector(w, h);
-        this.sprite = sprite;
         this.collider = collider;
         this.collider.position = this.position;
         this.collider.hitbox = new OffsetHitbox(new Vector(), this.size);
@@ -41,23 +38,14 @@ export class MapObject {
 
     show() {
         if (DEBUG) {
-            this.collider.show();
-        }
-
-        if (this.sprite instanceof ImgSprite || this.sprite instanceof ColorSprite) {
-            if (!this.sprite.image) return;
-            this.sprite.scale = new Vector(this.size.x / this.sprite.image.width, this.size.y / this.sprite.image.height);
-            this.sprite.show(this.position.x, this.position.y);
-        } else if (this.sprite instanceof AniSprite) {
-            this.sprite.show(this.position.x, this.position.y);
         }
     }
 }
 
 export class Platform extends MapObject {
     spawner: Collider;
-    constructor(x: number, y: number, w: number, h: number, collider: Collider, sprite?: Sprite, spawnerX?: number) {
-        super(x, y, w, h, collider, sprite);
+    constructor(x: number, y: number, w: number, h: number, collider: Collider, spawnerX?: number) {
+        super(x, y, w, h, collider);
         this.static = true;
         if (spawnerX) {
             this.spawner = new Collider();
@@ -69,7 +57,6 @@ export class Platform extends MapObject {
     show(): void {
         super.show();
         if (DEBUG && this.spawner) {
-            this.spawner.show();
         }
     }
 }
