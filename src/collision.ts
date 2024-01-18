@@ -75,7 +75,7 @@ export function handleCollision(
     collider1: Collider,
     collider2: Collider
 ) {
-    if (gameObject1.velocity.x == 0 && gameObject1.velocity.y == 0 && gameObject2.velocity.x == 0 && gameObject2.velocity.y == 0) return;
+    if ((gameObject1.velocity.x == 0 && gameObject1.velocity.y == 0 && gameObject2.velocity.x == 0 && gameObject2.velocity.y == 0)) return;
     // No need to checkx if they're overlapping, and then calculate the overlap
     // you can calculate overlap first and then check if it's 0 on both overlapX and overlapY
     // to determine collision

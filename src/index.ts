@@ -12,13 +12,13 @@ export interface SharedEvents {}
 
 // Client → Server
 export interface ClientEvents extends SharedEvents {
-    move: (x: number, y: number) => void;
+    move: (x: number, y: number, velx: number, vely:number, xAccel: number) => void;
     playerJoined: (playerName: string) => void;
 }
 
 // Server → Client
 export interface ServerEvents extends SharedEvents {
-    playerMoved: (playerID: string, x: number, y: number) => void;
+    playerMoved: (playerID: string, x: number, y: number, velx: number, vely:number, xAccel: number) => void;
     playerJoined: (playerID: string, playerName: string) => void;
     playerLeft: (playerID: string) => void;
 }
@@ -48,7 +48,7 @@ var gameStarted = false;
 io.on('connection', (socket: Socket) => {
     if (!gameStarted) {
         gameStarted = true;
-        enemyHandler.createEnemies(5);
+        enemyHandler.createEnemy(5);
         createMap()
         update()
     }
@@ -81,10 +81,10 @@ io.on('connection', (socket: Socket) => {
         }
     });
 
-    socket.on('move', (x: number, y: number) => {
+    socket.on('move', (x: number, y: number, velx: number, vely:number) => {
         for (let existingUser of connectedClients) {
             if (existingUser.socket !== socket && existingUser.username !== '') {
-                existingUser.socket.emit('playerMoved', socket.uuid, x, y);
+                existingUser.socket.emit('playerMoved', socket.uuid, x, y, velx, vely);
             }
         }
     });

@@ -34,7 +34,7 @@ export function update() {
     }
 
     if (enemyHandler.enemies.length == 0&&!enemyHandler.spawningWave) {
-        enemyHandler.createEnemies(5);
+        enemyHandler.createEnemy(5);
     }
 
 

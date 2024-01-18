@@ -131,7 +131,6 @@ export class Player {
         return this._dead;
     }
 }
-
 export class EnemyHandler {
     private static singleton: EnemyHandler;
     private _enemies: Enemy[] = [];
@@ -149,47 +148,53 @@ export class EnemyHandler {
         return EnemyHandler.singleton;
     }
 
-    createEnemy() {
-        let spawnablesSpots: Platform[] = [];
+    createEnemy(number: number = 1) {
+        console.log("creating enemy")
+        let alreadySpawned = number;
+        for (let i = 0; i < number; i++) {
+            // var spawnablesSpots = filter((object) => {
+            //     return object instanceof Platform && object.spawner;
+            // });
 
-        for (let [_, value] of GAME_OBJECTS) {
-            if (value instanceof Platform && value.spawner) {
-                spawnablesSpots.push(value);
-            }
-        }
+            let spawnablesSpots: Platform[] = [];
 
-        for (let i = spawnablesSpots.length - 1; i >= 0; i--) {
-            for (var enemy of this.enemies) {
-                if (
-                    isColliding(enemy.collider, spawnablesSpots[i].spawner)
-                ) {
-                    spawnablesSpots.splice(i, 1);
-                    break;
+            for (let [_, value] of GAME_OBJECTS) {
+                if (value instanceof Platform && value.spawner) {
+                    spawnablesSpots.push(value);
                 }
             }
+
+            for (let i = spawnablesSpots.length - 1; i >= 0; i--) {
+                for (var enemy of this.enemies) {
+                    if (
+                        isColliding(enemy.collider, spawnablesSpots[i].spawner)
+                    ) {
+                        spawnablesSpots.splice(i, 1);
+                        break;
+                    }
+                }
+            }
+
+            let spot =
+                spawnablesSpots[
+                Math.floor(Math.random() * spawnablesSpots.length)
+                ];
+            if (spawnablesSpots.length == 0) break;
+            const newEnemy = new Enemy(
+                spot.spawner.collisionX + PLAYER_WIDTH,
+                spot.spawner.collisionY + PLAYER_HEIGHT,
+                PLAYER_WIDTH,
+                PLAYER_HEIGHT,
+                "green"
+            )
+            alreadySpawned--
+            this.enemies.push(newEnemy);
+            io.in("players").emit("playerJoined", newEnemy.id, newEnemy.name);
         }
-
-        let spot = spawnablesSpots[
-            Math.floor(Math.random() * spawnablesSpots.length)
-        ];
-
-        if (spawnablesSpots.length == 0) return;
-
-        const newEnemy = new Enemy(
-            spot.spawner.collisionX + PLAYER_WIDTH,
-            spot.spawner.collisionY + PLAYER_HEIGHT,
-            PLAYER_WIDTH,
-            PLAYER_HEIGHT,
-            "green"
-        )
-        
-        this.enemies.push(newEnemy);
-        io.in("players").emit("playerJoined", newEnemy.id, newEnemy.name);
-    }
-
-    createEnemies(enemyCount: number = 1) {
-        for (let i = 0; i < enemyCount; i++) {
-            this.createEnemy();
+        if (alreadySpawned > 0) {
+            setTimeout(() => this.createEnemy(alreadySpawned), 1000);
+        } else {
+            this.spawningWave = false;
         }
     }
 
@@ -241,11 +246,13 @@ export class Enemy extends Player {
                 break;
         }
     }
-
-    dumbAI() {
+    sendData() {
         for (let existingUser of connectedClients) {
-            existingUser.socket.emit('playerMoved', this.id, this.position.x, this.position.y);
+            existingUser.socket.emit('playerMoved', this.id, this.position.x, this.position.y, this.velocity.x, this.velocity.y, this.xAccel);
         }
+    }
+    dumbAI() {
+        this.sendData();
         let closestPlayer = null
         let smallestDistance = GAME_WIDTH * GAME_HEIGHT;
         for (var [_, object] of GAME_OBJECTS) {
@@ -286,6 +293,9 @@ export class Enemy extends Player {
                     this.xAccel = -0.05;
                 } else {
                     this.xAccel = -0.07;
+                }
+                for (let existingUser of connectedClients) {
+                    existingUser.socket.emit('playerMoved', this.id, this.position.x, this.position.y, this.velocity.x, this.velocity.y, this.xAccel);
                 }
                 break;
             default:
