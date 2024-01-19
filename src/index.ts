@@ -12,13 +12,13 @@ export interface SharedEvents {}
 
 // Client → Server
 export interface ClientEvents extends SharedEvents {
-    move: (x: number, y: number, velx: number, vely:number, xAccel: number) => void;
+    move: (x: number, y: number, velx: number, vely:number, xAccel: number, isJumping:boolean) => void;
     playerJoined: (playerName: string) => void;
 }
 
 // Server → Client
 export interface ServerEvents extends SharedEvents {
-    playerMoved: (playerID: string, x: number, y: number, velx: number, vely:number, xAccel: number) => void;
+    playerMoved: (playerID: string, x: number, y: number, velx: number, vely:number, xAccel: number, isJumping:boolean) => void;
     playerJoined: (playerID: string, playerName: string) => void;
     playerLeft: (playerID: string) => void;
 }
@@ -34,12 +34,6 @@ export const io = new Server<ClientEvents, ServerEvents>(server, {
 interface ClientData {
     username: string;
     socket: Socket;
-}
-
-declare module 'socket.io' {
-    interface Socket {
-        uuid: string;
-    }
 }
 
 export const connectedClients: ClientData[] = [];
@@ -69,34 +63,34 @@ io.on('connection', (socket: Socket) => {
         // send join event to existing users
         for (let existingUser of connectedClients) {
             if (existingUser.socket !== socket && existingUser.username !== '') {
-                existingUser.socket.emit('playerJoined', socket.uuid, username);
+                existingUser.socket.emit('playerJoined', socket.id, username);
             }
         }
 
         // send all existing users to sender
         for (let existingUser of connectedClients) {
             if (existingUser.username !== '') {
-                newUser.socket.emit('playerJoined', existingUser.socket.uuid, existingUser.username);
+                newUser.socket.emit('playerJoined', existingUser.socket.id, existingUser.username);
             }
         }
     });
 
-    socket.on('move', (x: number, y: number, velx: number, vely:number) => {
+    socket.on('move', (x: number, y: number, velx: number, vely:number, xAccel:number, isJumping:boolean) => {
         for (let existingUser of connectedClients) {
             if (existingUser.socket !== socket && existingUser.username !== '') {
-                existingUser.socket.emit('playerMoved', socket.uuid, x, y, velx, vely);
+                existingUser.socket.emit('playerMoved', socket.id, x, y, velx, vely, xAccel, isJumping);
             }
         }
     });
 
     socket.on('disconnect', () => {
-        console.log(`user disconnected: ${socket.uuid}`);
+        console.log(`user disconnected: ${socket.id}`);
         const user = connectedClients.find((s) => s.socket === socket);
         if (!user) return console.error('sender not found');
         connectedClients.splice(connectedClients.indexOf(user), 1);
         for (let existingUser of connectedClients) {
             if (existingUser.username !== '') {
-                existingUser.socket.emit('playerLeft', user.socket.uuid);
+                existingUser.socket.emit('playerLeft', user.socket.id);
             }
         }
     });
