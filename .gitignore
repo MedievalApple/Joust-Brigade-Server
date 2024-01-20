@@ -1,2 +1,5 @@
-node_modules/
-build/
+.vscode
+.vite
+vite.config.js
+/node_modules
+/build
