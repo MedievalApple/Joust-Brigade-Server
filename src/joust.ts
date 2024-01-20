@@ -37,7 +37,6 @@ export function update() {
         enemyHandler.createEnemy(5);
     }
 
-
     GAME_OBJECTS.forEach(mObject1 => {
         GAME_OBJECTS.forEach(mObject2 => {
             if (mObject1 !== mObject2 && mObject1.collider && mObject2.collider) {

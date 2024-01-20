@@ -122,6 +122,11 @@ export class Player {
             } else {
                 // Delete enemy from GAME_OBJECTS
                 // GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(this), 1);
+                for (let existingUser of connectedClients) {
+                    if (existingUser.username !== '') {
+                        existingUser.socket.emit('playerLeft', this.id);
+                    }
+                }
                 GAME_OBJECTS.delete(this.id);
             }
         }
@@ -189,7 +194,7 @@ export class EnemyHandler {
             )
             alreadySpawned--
             this.enemies.push(newEnemy);
-            io.in("players").emit("playerJoined", newEnemy.id, newEnemy.name);
+            io.in("players").emit("enemyJoined", newEnemy.id, newEnemy.name);
         }
         if (alreadySpawned > 0) {
             setTimeout(() => this.createEnemy(alreadySpawned), 1000);
