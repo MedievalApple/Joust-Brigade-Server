@@ -253,7 +253,7 @@ export class Enemy extends Player {
     }
     sendData() {
         for (let existingUser of connectedClients) {
-            existingUser.socket.emit('playerMoved', this.id, this.position.x, this.position.y, this.velocity.x, this.velocity.y, this.xAccel);
+            existingUser.socket.emit('playerMoved', this.id, this.position.x, this.position.y, this.velocity.x, this.velocity.y, this.xAccel, this.isJumping);
         }
     }
     dumbAI() {
@@ -300,7 +300,7 @@ export class Enemy extends Player {
                     this.xAccel = -0.07;
                 }
                 for (let existingUser of connectedClients) {
-                    existingUser.socket.emit('playerMoved', this.id, this.position.x, this.position.y, this.velocity.x, this.velocity.y, this.xAccel);
+                    existingUser.socket.emit('playerMoved', this.id, this.position.x, this.position.y, this.velocity.x, this.velocity.y, this.xAccel, this.isJumping);
                 }
                 break;
             default:

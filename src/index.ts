@@ -3,6 +3,7 @@ import { createServer } from 'http';
 import { GAME_OBJECTS, enemyHandler, update } from './joust';
 import { createMap } from './map';
 import { Enemy, Player } from './player';
+import { Direction } from './enums';
 
 const SERVER_PORT = 3000;
 const server = createServer();
@@ -13,13 +14,13 @@ export interface SharedEvents {}
 
 // Client → Server
 export interface ClientEvents extends SharedEvents {
-    move: (x: number, y: number, velx: number, vely:number, xAccel: number, isJumping:boolean) => void;
+    move: (x: number, y: number, velx: number, vely:number, xAccel: number, isJumping:boolean, direction:Direction) => void;
     playerJoined: (playerName: string) => void;
 }
 
 // Server → Client
 export interface ServerEvents extends SharedEvents {
-    playerMoved: (playerID: string, x: number, y: number, velx: number, vely:number, xAccel: number, isJumping:boolean) => void;
+    playerMoved: (playerID: string, x: number, y: number, velx: number, vely:number, xAccel: number, isJumping:boolean, direction:Direction) => void;
     playerJoined: (playerID: string, playerName: string) => void;
     enemyJoined: (enemyID: string, EnemyName: string) => void;
     playerLeft: (playerID: string) => void;
@@ -83,7 +84,7 @@ io.on('connection', (socket: Socket) => {
         }
     });
 
-    socket.on('move', (x: number, y: number, velx: number, vely:number, xAccel:number, isJumping:boolean) => {
+    socket.on('move', (x: number, y: number, velx: number, vely:number, xAccel:number, isJumping:boolean, direction:Direction) => {
 
         const player = GAME_OBJECTS.get(socket.id);
         if (player instanceof Player) {
@@ -93,12 +94,13 @@ io.on('connection', (socket: Socket) => {
             player.velocity.y = vely;
             player.xAccel = xAccel;
             player.isJumping = isJumping;
+            player.direction = direction;
             player.updateCollider(player.position);
         }
 
         for (let existingUser of connectedClients) {
             if (existingUser.socket !== socket && existingUser.username !== '') {
-                existingUser.socket.emit('playerMoved', socket.id, x, y, velx, vely, xAccel, isJumping);
+                existingUser.socket.emit('playerMoved', socket.id, x, y, velx, vely, xAccel, isJumping, direction);
             }
         }
     });
