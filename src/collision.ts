@@ -1,4 +1,5 @@
-import {enemyHandler } from "./joust";
+import { connectedClients, io } from ".";
+import {GAME_OBJECTS, enemyHandler } from "./joust";
 import { Enemy, Player } from "./player";
 import { Vector } from "./vector";
 
@@ -57,6 +58,7 @@ export class Collider {
         return this.hitbox.size;
     }
 }
+
 export function isColliding(collider1: Collider, collider2: Collider) {
     const overlapX = Math.min(
         collider1.collisionX + collider1.collisionSize.x - collider2.collisionX,
@@ -69,6 +71,7 @@ export function isColliding(collider1: Collider, collider2: Collider) {
     );
     return (overlapX >= 0 && overlapY >= 0);
 }
+
 export function handleCollision(
     gameObject1: ICollisionObject,
     gameObject2: ICollisionObject,
@@ -174,5 +177,9 @@ export function handleCollision(
                 }
             }
         }
+        if(gameObject1 instanceof Player && gameObject2 instanceof Enemy){
+            connectedClients
+        }
     }
+    
 }
