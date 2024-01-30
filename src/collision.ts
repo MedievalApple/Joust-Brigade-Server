@@ -1,5 +1,4 @@
-import { connectedClients, io } from ".";
-import {GAME_OBJECTS, enemyHandler } from "./joust";
+import { connectedClients } from ".";
 import { Enemy, Player } from "./player";
 import { Vector } from "./vector";
 
@@ -69,7 +68,7 @@ export function isColliding(collider1: Collider, collider2: Collider) {
         collider1.collisionY + collider1.collisionSize.y - collider2.collisionY,
         collider2.collisionY + collider2.collisionSize.y - collider1.collisionY
     );
-    return (overlapX >= 0 && overlapY >= 0);
+    return overlapX >= 0 && overlapY >= 0;
 }
 
 export function handleCollision(
@@ -78,19 +77,15 @@ export function handleCollision(
     collider1: Collider,
     collider2: Collider
 ) {
-    // if(gameObject1.constructor == Player){
-    //     console.log("Player Collides")
-    // }
-    if ((gameObject1.velocity.x == 0 && gameObject1.velocity.y == 0 && gameObject2.velocity.x == 0 && gameObject2.velocity.y == 0)) return;
-    // No need to checkx if they're overlapping, and then calculate the overlap
-    // you can calculate overlap first and then check if it's 0 on both overlapX and overlapY
-    // to determine collision
-    
-    // Bonus:
-    // Alternatively, you can take a 2 phase approach to collision, a broad phase and a narrow phase
-    // quickly determine if two objects are not likely to collide (small size and far away), and then
-    // skip collision checking for those altogether
-    // Calculate the overlap on each axis
+    if (
+        gameObject1.velocity.x == 0 &&
+        gameObject1.velocity.y == 0 &&
+        gameObject2.velocity.x == 0 &&
+        gameObject2.velocity.y == 0
+    ) {
+        return;
+    }
+
     const overlapX = Math.min(
         collider1.collisionX + collider1.collisionSize.x - collider2.collisionX,
         collider2.collisionX + collider2.collisionSize.x - collider1.collisionX
@@ -111,7 +106,12 @@ export function handleCollision(
         }
 
         // if checking player vs enemy, A-B, B-A
-        if (gameObject1.constructor == Player && gameObject2.constructor == Enemy || gameObject1.constructor == Enemy && gameObject2.constructor == Player) {
+        if (
+            (gameObject1.constructor == Player &&
+                gameObject2.constructor == Enemy) ||
+            (gameObject1.constructor == Enemy &&
+                gameObject2.constructor == Player)
+        ) {
             // Check which object is the higher one
             let higherObject: ICollisionObject;
             let lowerObject: ICollisionObject;
@@ -140,24 +140,28 @@ export function handleCollision(
         // Determine which axis has the smallest overlap (penetration)
         if (overlapX < overlapY) {
             // Resolve the collision on the X-axis
-            const sign = Math.sign(gameObject1.velocity.x - gameObject2.velocity.x);
+            const sign = Math.sign(
+                gameObject1.velocity.x - gameObject2.velocity.x
+            );
             if (!gameObject1.static) {
                 gameObject1.position.x -= overlapX * sign;
                 gameObject1.velocity.x *= -collider1.friction;
-                if(gameObject1.updateCollider) {
+                if (gameObject1.updateCollider) {
                     gameObject1.updateCollider(gameObject1.position);
                 }
             }
             if (!gameObject2.static) {
                 gameObject2.position.x -= -overlapX * sign;
                 gameObject2.velocity.x *= -collider2.friction;
-                if(gameObject2.updateCollider) {
+                if (gameObject2.updateCollider) {
                     gameObject2.updateCollider(gameObject2.position);
                 }
             }
         } else {
             // Resolve the collision on the Y-axis
-            const sign = Math.sign(gameObject1.velocity.y - gameObject2.velocity.y);
+            const sign = Math.sign(
+                gameObject1.velocity.y - gameObject2.velocity.y
+            );
             if (sign < 0) {
                 gameObject2.isJumping = false;
                 gameObject1.isJumping = false;
@@ -165,21 +169,20 @@ export function handleCollision(
             if (!gameObject1.static) {
                 gameObject1.position.y -= overlapY * sign;
                 gameObject1.velocity.y *= -collider1.friction;
-                if(gameObject1.updateCollider) {
+                if (gameObject1.updateCollider) {
                     gameObject1.updateCollider(gameObject1.position);
                 }
             }
             if (!gameObject2.static) {
                 gameObject2.position.y -= -overlapY * sign;
                 gameObject2.velocity.y *= -collider2.friction;
-                if(gameObject2.updateCollider) {
+                if (gameObject2.updateCollider) {
                     gameObject2.updateCollider(gameObject2.position);
                 }
             }
         }
-        if(gameObject1 instanceof Player && gameObject2 instanceof Enemy){
-            connectedClients
+        if (gameObject1 instanceof Player && gameObject2 instanceof Enemy) {
+            connectedClients;
         }
     }
-    
 }
