@@ -1,11 +1,6 @@
 import { Platform, addObjects } from "./map_object";
-import { Vector } from "./vector";
 import { Collider } from "./collision";
-import { advancedLog } from "./utils";
 import { GAME_WIDTH } from "./joust";
-
-// light green: 
-advancedLog("Map loaded", "#32a852", "🗺️");
 
 export function createMap() {
     // Platforms
@@ -22,4 +17,3 @@ export function createMap() {
         new Platform(91, 388, 298, 60, new Collider()), //8
     ]);
 }
-// new Block(79, 388, 303, 100, null); //8

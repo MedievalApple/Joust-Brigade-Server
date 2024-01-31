@@ -11,10 +11,13 @@ import { OffsetHitbox, ICollisionObject, isColliding } from "./collision";
 import { constrain } from "./utils";
 import { Direction } from "./enums";
 import { v4 as uuidv4 } from "uuid";
-import { connectedClients, io } from ".";
+import { io } from ".";
+
+type PlayerType = "player" | "enemy";
 
 export class Player {
     private _dead: boolean = false;
+    playerType: PlayerType = "player";
     name: string;
     velocity: Vector = new Vector(0, 0);
     size: Vector;
@@ -209,6 +212,7 @@ var counter = 0;
 
 export class Enemy extends Player {
     debugColor: string = "white";
+    playerType: PlayerType = "enemy";
 
     constructor(
         x: number,
@@ -243,46 +247,37 @@ export class Enemy extends Player {
         }
     }
     sendData() {
-        // for (let existingUser of connectedClients) {
-        //     existingUser.socket.emit(
-        //         "playerMoved",
-        //         this.id,
-        //         this.position.x,
-        //         this.position.y,
-        //         this.velocity.x,
-        //         this.velocity.y,
-        //         this.xAccel,
-        //         this.isJumping
-        //     );
-        // }
-
-        connectedClients.forEach((value, key) => {
-            value.socket.emit(
-                "playerMoved",
-                this.id,
-                this.position.x,
-                this.position.y,
-                this.velocity.x,
-                this.velocity.y,
-                this.xAccel,
-                this.isJumping
-            );
-        });
+        io.in("players").emit(
+            "playerMoved",
+            this.id,
+            this.position.x,
+            this.position.y,
+            this.velocity.x,
+            this.velocity.y,
+            this.xAccel,
+            this.isJumping,
+            this.direction
+        );
     }
-    dumbAI() {
+
+    update() {
         this.sendData();
+
         let closestPlayer = null;
         let smallestDistance = GAME_WIDTH * GAME_HEIGHT;
+
         for (var [_, object] of GAME_OBJECTS) {
             if (object.constructor == Player) {
                 // @ts-ignore
                 let distance = this.position.clone().sub(object.position).mag();
+                
                 if (distance < smallestDistance) {
                     smallestDistance = distance;
                     closestPlayer = object;
                 }
             }
         }
+
         if (Math.random() < 0.1) {
             if (closestPlayer && this.position.y > closestPlayer.position.y) {
                 this.isJumping = true;
@@ -306,37 +301,15 @@ export class Enemy extends Player {
                 break;
             case false:
                 this.direction = Direction.Left;
+
                 if (Math.abs(this.velocity.x) == 0) {
                     this.velocity.x = -1;
                     this.xAccel = -0.05;
                 } else {
                     this.xAccel = -0.07;
                 }
-                // for (let existingUser of connectedClients) {
-                //     existingUser.socket.emit(
-                //         "playerMoved",
-                //         this.id,
-                //         this.position.x,
-                //         this.position.y,
-                //         this.velocity.x,
-                //         this.velocity.y,
-                //         this.xAccel,
-                //         this.isJumping
-                //     );
-                // }
 
-                connectedClients.forEach((value, key) => {
-                    value.socket.emit(
-                        "playerMoved",
-                        this.id,
-                        this.position.x,
-                        this.position.y,
-                        this.velocity.x,
-                        this.velocity.y,
-                        this.xAccel,
-                        this.isJumping
-                    );
-                });
+                io.in("players").emit("playerMoved", this.id, this.position.x, this.position.y, this.velocity.x, this.velocity.y, this.xAccel, this.isJumping, this.direction);
 
                 break;
             default:
