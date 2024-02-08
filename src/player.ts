@@ -11,10 +11,13 @@ import { OffsetHitbox, ICollisionObject, isColliding } from "./collision";
 import { constrain } from "./utils";
 import { Direction } from "./enums";
 import { v4 as uuidv4 } from "uuid";
-import { connectedClients, io } from ".";
+import { io } from ".";
+
+type PlayerType = "player" | "enemy";
 
 export class Player {
     private _dead: boolean = false;
+    playerType: PlayerType = "player";
     name: string;
     velocity: Vector = new Vector(0, 0);
     size: Vector;
@@ -120,20 +123,7 @@ export class Player {
                 this.position = new Vector(200, 310);
                 this.dead = false;
             } else {
-                // Delete enemy from GAME_OBJECTS
-                // GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(this), 1);
-                // for (let existingUser of connectedClients) {
-                //     if (existingUser.username !== "") {
-                //         existingUser.socket.emit("playerLeft", this.id);
-                //     }
-                // }
-
-                connectedClients.forEach((value, key) => {
-                    if (value.username !== "") {
-                        value.socket.emit("playerLeft", this.id);
-                    }
-                });
-
+                io.in("players").except(this.id).emit("playerLeft", this.id);
                 GAME_OBJECTS.delete(this.id);
             }
         }
@@ -143,6 +133,7 @@ export class Player {
         return this._dead;
     }
 }
+
 export class EnemyHandler {
     private static singleton: EnemyHandler;
     private _enemies: Enemy[] = [];
@@ -164,10 +155,6 @@ export class EnemyHandler {
         console.log("creating enemy");
         let alreadySpawned = number;
         for (let i = 0; i < number; i++) {
-            // var spawnablesSpots = filter((object) => {
-            //     return object instanceof Platform && object.spawner;
-            // });
-
             let spawnablesSpots: Platform[] = [];
 
             for (let [_, value] of GAME_OBJECTS) {
@@ -225,6 +212,7 @@ var counter = 0;
 
 export class Enemy extends Player {
     debugColor: string = "white";
+    playerType: PlayerType = "enemy";
 
     constructor(
         x: number,
@@ -259,46 +247,37 @@ export class Enemy extends Player {
         }
     }
     sendData() {
-        // for (let existingUser of connectedClients) {
-        //     existingUser.socket.emit(
-        //         "playerMoved",
-        //         this.id,
-        //         this.position.x,
-        //         this.position.y,
-        //         this.velocity.x,
-        //         this.velocity.y,
-        //         this.xAccel,
-        //         this.isJumping
-        //     );
-        // }
-
-        connectedClients.forEach((value, key) => {
-            value.socket.emit(
-                "playerMoved",
-                this.id,
-                this.position.x,
-                this.position.y,
-                this.velocity.x,
-                this.velocity.y,
-                this.xAccel,
-                this.isJumping
-            );
-        });
+        io.in("players").emit(
+            "playerMoved",
+            this.id,
+            this.position.x,
+            this.position.y,
+            this.velocity.x,
+            this.velocity.y,
+            this.xAccel,
+            this.isJumping,
+            this.direction
+        );
     }
-    dumbAI() {
+
+    update() {
         this.sendData();
+
         let closestPlayer = null;
         let smallestDistance = GAME_WIDTH * GAME_HEIGHT;
+
         for (var [_, object] of GAME_OBJECTS) {
             if (object.constructor == Player) {
                 // @ts-ignore
                 let distance = this.position.clone().sub(object.position).mag();
+                
                 if (distance < smallestDistance) {
                     smallestDistance = distance;
                     closestPlayer = object;
                 }
             }
         }
+
         if (Math.random() < 0.1) {
             if (closestPlayer && this.position.y > closestPlayer.position.y) {
                 this.isJumping = true;
@@ -322,37 +301,15 @@ export class Enemy extends Player {
                 break;
             case false:
                 this.direction = Direction.Left;
+
                 if (Math.abs(this.velocity.x) == 0) {
                     this.velocity.x = -1;
                     this.xAccel = -0.05;
                 } else {
                     this.xAccel = -0.07;
                 }
-                // for (let existingUser of connectedClients) {
-                //     existingUser.socket.emit(
-                //         "playerMoved",
-                //         this.id,
-                //         this.position.x,
-                //         this.position.y,
-                //         this.velocity.x,
-                //         this.velocity.y,
-                //         this.xAccel,
-                //         this.isJumping
-                //     );
-                // }
 
-                connectedClients.forEach((value, key) => {
-                    value.socket.emit(
-                        "playerMoved",
-                        this.id,
-                        this.position.x,
-                        this.position.y,
-                        this.velocity.x,
-                        this.velocity.y,
-                        this.xAccel,
-                        this.isJumping
-                    );
-                });
+                io.in("players").emit("playerMoved", this.id, this.position.x, this.position.y, this.velocity.x, this.velocity.y, this.xAccel, this.isJumping, this.direction);
 
                 break;
             default:

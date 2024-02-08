@@ -1,11 +1,11 @@
-import { Player, EnemyHandler } from './player';
+import { EnemyHandler } from './player';
 import { handleCollision } from './collision';
 import { GAME_OBJECTS } from './map_object';
-import { DEBUG } from './debug';
 
-export const GAME_WIDTH = 480, GAME_HEIGHT = 480;
 // Constants for readability
+export const GAME_WIDTH = 480, GAME_HEIGHT = 480;
 export const FRAME_RATE = 60;
+
 let lastFrameTime = 0;
 let lastUpdateTime = 0;
 
@@ -17,9 +17,6 @@ export var frameCount = 0;
 
 // Instantiate enemy handler
 export const enemyHandler = EnemyHandler.getInstance(5);
-
-// new UnmountedAI(100,100,PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_COLOR, null)
-
 
 export function update() {
     GAME_OBJECTS.forEach(mObject => {

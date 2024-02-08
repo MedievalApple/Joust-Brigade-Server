@@ -35,11 +35,6 @@ export class MapObject {
         this.collider.position = this.position;
         this.collider.hitbox = new OffsetHitbox(new Vector(), this.size);
     }
-
-    show() {
-        if (DEBUG) {
-        }
-    }
 }
 
 export class Platform extends MapObject {
@@ -52,11 +47,6 @@ export class Platform extends MapObject {
             this.spawner.position = this.position.clone();
             this.spawner.position.x += spawnerX;
             this.spawner.hitbox = new OffsetHitbox(new Vector(0, -PLAYER_HEIGHT), new Vector(PLAYER_WIDTH, PLAYER_HEIGHT));
-        }
-    }
-    show(): void {
-        super.show();
-        if (DEBUG && this.spawner) {
         }
     }
 }
