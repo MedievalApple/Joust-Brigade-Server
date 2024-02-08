@@ -123,7 +123,20 @@ export class Player {
                 this.position = new Vector(200, 310);
                 this.dead = false;
             } else {
-                io.in("players").except(this.id).emit("playerLeft", this.id);
+                // Delete enemy from GAME_OBJECTS
+                // GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(this), 1);
+                // for (let existingUser of connectedClients) {
+                //     if (existingUser.username !== "") {
+                //         existingUser.socket.emit("playerLeft", this.id);
+                //     }
+                // }
+
+                connectedClients.forEach((value, key) => {
+                    if (value.username !== "") {
+                        value.socket.emit("playerLeft", this.id);
+                    }
+                });
+
                 GAME_OBJECTS.delete(this.id);
             }
         }
@@ -133,7 +146,6 @@ export class Player {
         return this._dead;
     }
 }
-
 export class EnemyHandler {
     private static singleton: EnemyHandler;
     private _enemies: Enemy[] = [];
@@ -155,6 +167,10 @@ export class EnemyHandler {
         console.log("creating enemy");
         let alreadySpawned = number;
         for (let i = 0; i < number; i++) {
+            // var spawnablesSpots = filter((object) => {
+            //     return object instanceof Platform && object.spawner;
+            // });
+
             let spawnablesSpots: Platform[] = [];
 
             for (let [_, value] of GAME_OBJECTS) {
