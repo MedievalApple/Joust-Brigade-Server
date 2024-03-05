@@ -11,7 +11,7 @@ import { OffsetHitbox, ICollisionObject, isColliding } from "./collision";
 import { constrain } from "./utils";
 import { Direction } from "./enums";
 import { v4 as uuidv4 } from "uuid";
-import { io } from ".";
+import { connectedClients, io } from ".";
 
 type PlayerType = "player" | "enemy";
 
@@ -278,6 +278,7 @@ export class Enemy extends Player {
 
     update() {
         this.sendData();
+        super.update();
 
         let closestPlayer = null;
         let smallestDistance = GAME_WIDTH * GAME_HEIGHT;

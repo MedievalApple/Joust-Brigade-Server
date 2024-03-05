@@ -128,9 +128,11 @@ export function handleCollision(
 
                 // Kill the lower object
                 if (lowerObject.constructor == Player) {
-                    (lowerObject as Player).dead = true;
+                    // (lowerObject as Player).dead = true;
+                    // console.log("Player died");
                 } else {
                     (lowerObject as Enemy).dead = true;
+                    console.log("Enemy died");
                 }
 
                 return;
