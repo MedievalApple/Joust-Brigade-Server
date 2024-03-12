@@ -6,8 +6,8 @@ import {
     PLAYER_HEIGHT,
     PLAYER_WIDTH,
 } from "./joust";
-import { Collider, Platform } from "./map_object";
-import { OffsetHitbox, ICollisionObject, isColliding } from "./collision";
+import { Collider, IGameObject, Platform } from "./map_object";
+import { OffsetHitbox, isColliding } from "./collision";
 import { constrain } from "./utils";
 import { Direction } from "./enums";
 import { v4 as uuidv4 } from "uuid";
@@ -32,16 +32,17 @@ export class Player {
     collider: Collider;
     lance: Collider;
     head: Collider;
-    collisionObjects: Array<ICollisionObject> = [];
+    collisionObjects: Array<IGameObject> = [];
     jumpDebounce: boolean;
-    id: string = uuidv4();
+    id: string;
 
     constructor(
         x: number,
         y: number,
         width: number,
         height: number,
-        name: string
+        name: string,
+        id?: string
     ) {
         this.position = new Vector(x, y);
         this.size = new Vector(width, height);
@@ -61,6 +62,8 @@ export class Player {
             new Vector(4, 0),
             new Vector(18, 6)
         );
+
+        this.id = id || uuidv4();
 
         this.updateCollider(this.position);
         GAME_OBJECTS.set(this.id, this);
@@ -205,9 +208,10 @@ export class EnemyHandler {
             alreadySpawned--;
             this.enemies.push(newEnemy);
             io.in("players").emit("enemyJoined", newEnemy.id, newEnemy.name);
+            break;
         }
         if (alreadySpawned > 0) {
-            setTimeout(() => this.createEnemy(alreadySpawned), 1000);
+            setTimeout(() => this.createEnemy(alreadySpawned), 3000);
         } else {
             this.spawningWave = false;
         }
@@ -296,7 +300,7 @@ export class Enemy extends Player {
         }
 
         if (Math.random() < 0.1) {
-            if (closestPlayer && this.position.y > closestPlayer.position.y) {
+            if (closestPlayer && this.position.y > closestPlayer.position.y+this.size.y/2) {
                 this.isJumping = true;
                 this.velocity.y = constrain(this.velocity.y - 2, -2, 2);
             } else {

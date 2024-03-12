@@ -1,22 +1,24 @@
 import { Vector } from "./vector";
-import { Player } from "./player";
+import { Enemy, Player } from "./player";
 import { DEBUG } from "./debug";
-import { Collider, ICollisionObject, OffsetHitbox } from "./collision";
+import { Collider, OffsetHitbox } from "./collision";
 import { PLAYER_HEIGHT, PLAYER_WIDTH } from "./joust";
 import { v4 as uuidv4 } from "uuid";
 
-interface IGameObject {
-    position: Vector;
-    velocity: Vector;
-    collider: Collider;
-    id: string;
-    update?: () => void;
-    show?: () => void;
-    dumbAI?: () => void;
-    dead?: boolean;
-    collisionObjects?: Array<ICollisionObject>;
-    spawner?: Collider;
-}
+// interface IGameObject {
+//     position: Vector;
+//     velocity: Vector;
+//     collider: Collider;
+//     id: string;
+//     update?: () => void;
+//     show?: () => void;
+//     dumbAI?: () => void;
+//     dead?: boolean;
+//     collisionObjects?: Array<ICollisionObject>;
+//     spawner?: Collider;
+// }
+
+export type IGameObject = Player | Enemy | Platform;
 
 const GAME_OBJECTS: Map<string, IGameObject> = new Map();
 export class MapObject {

@@ -23,15 +23,11 @@ export const enemyHandler = EnemyHandler.getInstance(5);
 
 export function update() {
     GAME_OBJECTS.forEach(mObject => {
+        // @ts-ignore
         if (mObject.update) mObject.update();
+        // @ts-ignore
         if (mObject.dumbAI) mObject.dumbAI();
     });
-
-    for (let [_, value] of GAME_OBJECTS) {
-        if (value.collisionObjects) {
-            value.collisionObjects = [];
-        }
-    }
 
     if (enemyHandler.enemies.length == 0&&!enemyHandler.spawningWave) {
         enemyHandler.createEnemy(5);

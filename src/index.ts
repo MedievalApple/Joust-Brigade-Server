@@ -24,6 +24,7 @@ export interface ServerEvents extends SharedEvents {
     playerJoined: (playerID: string, playerName: string) => void;
     enemyJoined: (enemyID: string, EnemyName: string) => void;
     playerLeft: (playerID: string) => void;
+    flip: (playerID: string) => void;
 }
 
 export const io = new Server<ClientEvents, ServerEvents>(server, {
@@ -37,6 +38,7 @@ export const io = new Server<ClientEvents, ServerEvents>(server, {
 interface ClientData {
     username: string;
     socket: Socket;
+    score: number;
 }
 
 export const connectedClients: Map<string, ClientData> = new Map();
@@ -54,7 +56,7 @@ io.on('connection', (socket: Socket) => {
     }
 
     advancedLog(`User connected`, 'green', socket.id);
-    connectedClients.set(socket.id, { username: '', socket: socket });
+    connectedClients.set(socket.id, { username: '', socket: socket, score: 0 });
 
     // get join event from client, get data from client
     socket.on('playerJoined', (username: string) => {
@@ -78,7 +80,7 @@ io.on('connection', (socket: Socket) => {
         })
 
         //Add to servers internal game
-        GAME_OBJECTS.set(socket.id, new Player(50, 310, 13 * 2, 18 * 2, username));
+        GAME_OBJECTS.set(socket.id, new Player(50, 310, 13 * 2, 18 * 2, username, socket.id));
     
         for (let existingEnemys of enemyHandler.enemies) {
             io.in("players").emit("enemyJoined", existingEnemys.id, existingEnemys.name);
