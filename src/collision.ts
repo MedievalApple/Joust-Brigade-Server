@@ -146,7 +146,7 @@ export function handleCollision(
                 } else {
                     (lowerObject as Enemy).dead = true;
                     console.log("Enemy died");
-                }``
+                }
 
                 return;
             }

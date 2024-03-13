@@ -80,7 +80,7 @@ io.on('connection', (socket: Socket) => {
         })
 
         //Add to servers internal game
-        GAME_OBJECTS.set(socket.id, new Player(50, 310, 13 * 2, 18 * 2, username, socket.id));
+        new Player(50, 310, 13 * 2, 18 * 2, username, socket.id);
     
         for (let existingEnemys of enemyHandler.enemies) {
             io.in("players").emit("enemyJoined", existingEnemys.id, existingEnemys.name);

@@ -298,9 +298,8 @@ export class Enemy extends Player {
                 }
             }
         }
-
-        if (Math.random() < 0.1) {
-            if (closestPlayer && this.position.y > closestPlayer.position.y+this.size.y/2) {
+        if (Math.random() < 0.05) {
+            if (closestPlayer && this.position.y > closestPlayer.position.y+this.size.y) {
                 this.isJumping = true;
                 this.velocity.y = constrain(this.velocity.y - 2, -2, 2);
             } else {

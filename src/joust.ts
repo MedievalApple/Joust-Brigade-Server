@@ -18,7 +18,6 @@ export var frameCount = 0;
 // Instantiate enemy handler
 export const enemyHandler = EnemyHandler.getInstance(5);
 
-// new UnmountedAI(100,100,PLAYER_WIDTH, PLAYER_HEIGHT, PLAYER_COLOR, null)
 
 
 export function update() {
