@@ -141,6 +141,8 @@ export function handleCollision(
 
                 // Kill the lower object
                 if (lowerObject.constructor == Player) {
+                    io.in("players").emit("dead", lowerObject.id)
+                    lowerObject.position = new Vector(200, 310);
                     // (lowerObject as Player).dead = true;
                     // console.log("Player died");
                 } else {

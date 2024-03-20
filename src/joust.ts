@@ -6,7 +6,7 @@ import { DEBUG } from './debug';
 export const GAME_WIDTH = 480, GAME_HEIGHT = 480;
 // Constants for readability
 export const FRAME_RATE = 60;
-let lastFrameTime = 0;
+let previousTime = 0;
 let lastUpdateTime = 0;
 
 export const PLAYER_WIDTH = 13 * 2;
@@ -39,9 +39,10 @@ export function update() {
             }
         });
     });
-
     lastUpdateTime = performance.now();
-    setTimeout(update, 1000 / FRAME_RATE);
+    frameCount = lastUpdateTime - previousTime;
+    previousTime = lastUpdateTime;
+    setTimeout(update, 1000 / (60));
 }
 
 export {GAME_OBJECTS};

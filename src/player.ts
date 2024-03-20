@@ -111,7 +111,6 @@ export class Player {
 
         this.position.y += this.velocity.y;
         this.position.x += this.velocity.x;
-
         this.handleCollisions();
         if (this.position.y < -10 || this.position.y + 10 > GAME_HEIGHT) {
             this.position = new Vector(Math.random() * GAME_WIDTH, 50);

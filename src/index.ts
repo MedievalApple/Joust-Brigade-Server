@@ -25,6 +25,7 @@ export interface ServerEvents extends SharedEvents {
     enemyJoined: (enemyID: string, EnemyName: string) => void;
     playerLeft: (playerID: string) => void;
     flip: (playerID: string) => void;
+    dead: (playerID: string) => void;
 }
 
 export const io = new Server<ClientEvents, ServerEvents>(server, {
@@ -89,7 +90,6 @@ io.on('connection', (socket: Socket) => {
 
     socket.on('move', (x: number, y: number, velx: number, vely: number, xAccel: number, isJumping: boolean, direction: Direction) => {
         const player = GAME_OBJECTS.get(socket.id);
-
         if (player instanceof Player) {
             player.position.x = x;
             player.position.y = y;
