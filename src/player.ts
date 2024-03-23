@@ -6,12 +6,12 @@ import {
     PLAYER_HEIGHT,
     PLAYER_WIDTH,
 } from "./joust";
-import { Collider, Platform } from "./map_object";
-import { OffsetHitbox, ICollisionObject, isColliding } from "./collision";
+import { Collider, IGameObject, Platform } from "./map_object";
+import { OffsetHitbox, isColliding } from "./collision";
 import { constrain } from "./utils";
 import { Direction } from "./enums";
 import { v4 as uuidv4 } from "uuid";
-import { io } from ".";
+import { connectedClients, io } from ".";
 
 type PlayerType = "player" | "enemy";
 
@@ -32,16 +32,17 @@ export class Player {
     collider: Collider;
     lance: Collider;
     head: Collider;
-    collisionObjects: Array<ICollisionObject> = [];
+    collisionObjects: Array<IGameObject> = [];
     jumpDebounce: boolean;
-    id: string = uuidv4();
+    id: string;
 
     constructor(
         x: number,
         y: number,
         width: number,
         height: number,
-        name: string
+        name: string,
+        id?: string
     ) {
         this.position = new Vector(x, y);
         this.size = new Vector(width, height);
@@ -61,6 +62,8 @@ export class Player {
             new Vector(4, 0),
             new Vector(18, 6)
         );
+
+        this.id = id || uuidv4();
 
         this.updateCollider(this.position);
         GAME_OBJECTS.set(this.id, this);
@@ -108,7 +111,6 @@ export class Player {
 
         this.position.y += this.velocity.y;
         this.position.x += this.velocity.x;
-
         this.handleCollisions();
         if (this.position.y < -10 || this.position.y + 10 > GAME_HEIGHT) {
             this.position = new Vector(Math.random() * GAME_WIDTH, 50);
@@ -123,7 +125,20 @@ export class Player {
                 this.position = new Vector(200, 310);
                 this.dead = false;
             } else {
-                io.in("players").except(this.id).emit("playerLeft", this.id);
+                // Delete enemy from GAME_OBJECTS
+                // GAME_OBJECTS.splice(GAME_OBJECTS.indexOf(this), 1);
+                // for (let existingUser of connectedClients) {
+                //     if (existingUser.username !== "") {
+                //         existingUser.socket.emit("playerLeft", this.id);
+                //     }
+                // }
+
+                connectedClients.forEach((value, key) => {
+                    if (value.username !== "") {
+                        value.socket.emit("playerLeft", this.id);
+                    }
+                });
+
                 GAME_OBJECTS.delete(this.id);
             }
         }
@@ -133,7 +148,6 @@ export class Player {
         return this._dead;
     }
 }
-
 export class EnemyHandler {
     private static singleton: EnemyHandler;
     private _enemies: Enemy[] = [];
@@ -155,6 +169,10 @@ export class EnemyHandler {
         console.log("creating enemy");
         let alreadySpawned = number;
         for (let i = 0; i < number; i++) {
+            // var spawnablesSpots = filter((object) => {
+            //     return object instanceof Platform && object.spawner;
+            // });
+
             let spawnablesSpots: Platform[] = [];
 
             for (let [_, value] of GAME_OBJECTS) {
@@ -189,9 +207,10 @@ export class EnemyHandler {
             alreadySpawned--;
             this.enemies.push(newEnemy);
             io.in("players").emit("enemyJoined", newEnemy.id, newEnemy.name);
+            break;
         }
         if (alreadySpawned > 0) {
-            setTimeout(() => this.createEnemy(alreadySpawned), 1000);
+            setTimeout(() => this.createEnemy(alreadySpawned), 3000);
         } else {
             this.spawningWave = false;
         }
@@ -262,6 +281,7 @@ export class Enemy extends Player {
 
     update() {
         this.sendData();
+        super.update();
 
         let closestPlayer = null;
         let smallestDistance = GAME_WIDTH * GAME_HEIGHT;
@@ -277,9 +297,8 @@ export class Enemy extends Player {
                 }
             }
         }
-
-        if (Math.random() < 0.1) {
-            if (closestPlayer && this.position.y > closestPlayer.position.y) {
+        if (Math.random() < 0.05) {
+            if (closestPlayer && this.position.y > closestPlayer.position.y+this.size.y) {
                 this.isJumping = true;
                 this.velocity.y = constrain(this.velocity.y - 2, -2, 2);
             } else {

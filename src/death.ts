@@ -17,7 +17,6 @@ export class UnmountedAI extends Player {
     ) {
         super(x, y, width, height, color);
         this.dead = false;
-       
         switch (Math.floor(Math.random() * 2)) {
             case 0:
                 this.direction = Direction.Right;

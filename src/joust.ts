@@ -1,12 +1,12 @@
-import { EnemyHandler } from './player';
+import { Player, EnemyHandler } from './player';
 import { handleCollision } from './collision';
 import { GAME_OBJECTS } from './map_object';
+import { DEBUG } from './debug';
 
-// Constants for readability
 export const GAME_WIDTH = 480, GAME_HEIGHT = 480;
+// Constants for readability
 export const FRAME_RATE = 60;
-
-let lastFrameTime = 0;
+let previousTime = 0;
 let lastUpdateTime = 0;
 
 export const PLAYER_WIDTH = 13 * 2;
@@ -18,17 +18,15 @@ export var frameCount = 0;
 // Instantiate enemy handler
 export const enemyHandler = EnemyHandler.getInstance(5);
 
+
+
 export function update() {
     GAME_OBJECTS.forEach(mObject => {
+        // @ts-ignore
         if (mObject.update) mObject.update();
+        // @ts-ignore
         if (mObject.dumbAI) mObject.dumbAI();
     });
-
-    for (let [_, value] of GAME_OBJECTS) {
-        if (value.collisionObjects) {
-            value.collisionObjects = [];
-        }
-    }
 
     if (enemyHandler.enemies.length == 0&&!enemyHandler.spawningWave) {
         enemyHandler.createEnemy(5);
@@ -41,9 +39,10 @@ export function update() {
             }
         });
     });
-
     lastUpdateTime = performance.now();
-    setTimeout(update, 1000 / FRAME_RATE);
+    frameCount = lastUpdateTime - previousTime;
+    previousTime = lastUpdateTime;
+    setTimeout(update, 1000 / (60));
 }
 
 export {GAME_OBJECTS};
