@@ -6,6 +6,7 @@ name: Docker Publish
 # documentation.
 
 on:
+  push:
   release:
     types: [published]
     branches: [ "main" ]
